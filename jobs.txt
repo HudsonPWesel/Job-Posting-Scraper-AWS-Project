@@ -1,0 +1,7 @@
+title : Software Engineer Intern
+company-name : UNIYOND EDUCATION TECHNOLOGY INC
+location : 1 Lincoln Street, Boston, MA 02111
+salary-low : 15.0
+salary-high : 39.12
+job_type : Internship
+posting-link : https://www.indeed.com/rc/clk?jk=ff5af4e8582480fb&bb=szsJyIX7VffmNDWa-PbYtBUJplz7B53_ept4afdYSd_asMC00EES4ObJVBmjf4zlHVwRtc6QExolZSjKew_sdyvJ8Bp6acbjZ4r1XpZ3FvirqFOvDmWBHB1YnXruIWSG&xkcb=SoAz67M35jtvTbSCNR0LbzkdCdPP&fccid=b62ab0e9b9f373c3&cmp=UNIYOND-EDUCATION-TECHNOLOGY-INC&ti=Software+Engineer+Intern&vjs=3
