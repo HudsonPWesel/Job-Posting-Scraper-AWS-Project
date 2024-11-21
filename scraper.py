@@ -1,3 +1,4 @@
+from curses.ascii import isdigit
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
@@ -40,50 +41,55 @@ if __name__ == "__main__":
     for link in job_links:
         posting_data = {}
         worker_driver = uc.Chrome(use_subprocess=False)
-        worker_driver.get(link.get_attribute("href"))
+        worker_driver.get(link.get_attribute('href'))
+
         soup = BeautifulSoup(worker_driver.page_source, 'html5lib')
 
-        posting_data['job-title'] = soup.select_one(
-            '.jobsearch-JobInfoHeader-title-container').text.split(' - ')[0]
+        job_title_data = soup.select_one('h1') or soup.select_one(
+            'span[data-testid="jobsearch-JobInfoHeader-title"]') or soup.find_all('h1')
 
-        posting_data['location'] = soup.select_one(
-            'div[data-testid="inlineHeader-companyLocation"]').text
+        posting_data['job-title'] = job_title_data.text if job_title_data else 'Unspecified'
+
+        location_data = soup.select_one(
+            'div[data-testid="inlineHeader-companyLocation"]') or soup.select_one('.css-1ojh0u')
+
+        posting_data['location'] = location_data.text if location_data else 'Unspecified'
 
         salary_low = salary_high = job_type = 'Unspecified'
+
+        # Salary is really weird so I wrap in try/except
         try:
-            salary_range = soup.select_one('.css-19j1a75').text.split(' - ')
+            salary_data = soup.select_one(
+                'span.css-19j1a75') or soup.select_one('.salaryInfoAndJobType') or soup.select_one('.css-1xkrvql')
 
-            def parse_salary(salary_range): return [float(
-                salary_item[1:]) for salary_item in salary_range]
+            salary_data = salary_data.text.split(
+                ' ') if salary_data else 'Unspecified'
 
-            salary_range = parse_salary(salary_range)
+            salary_range = [float(salary_item[1:].replace(',', ''))
+                            for salary_item in salary_data if '$' in salary_item]
 
             if len(salary_range) == 1:
-                posting_data['salary_high'] = salary_range[0]
+                posting_data['salary_high'] = posting_data['salary_low'] = salary_range[0]
 
             elif len(salary_range) == 2:
                 posting_data['salary_low'], posting_data['salary_high'] = salary_range[0], salary_range[1]
         except:
-            print('Failed to extract salary!')
-            print(link)
+            print(salary_data)
+            posting_data['salary_low'] = posting_data['salary_high'] = 0.00
 
         try:
-            posting_data['job-type'] = soup.select_one(
-                '.css-k5flys').text.split(' ')
+            job_type_data = soup.select_one(
+                '.css-k5flys') or soup.select_one('div[id="salaryInfoAndJobType"]')
+
+            job_type_data = job_type_data.text.split(' ')
+
+            print(job_type_data)
+            posting_data['job-type'] = [job_type_item.replace(',', '') for job_type_item in job_type_data if len(
+                job_type_item) > 1 and (job_type_item.replace(',', '').lower() in job_types)]
 
         except:
-            print('Failed to extract job-type')
-            print(link)
+            posting_data['job-type'] = 'Unspecified'
 
         posting_data['posting-link'] = link.get_attribute("href")
-        # posting_data['job_type'] = ','.join([word for word in salary_jobtype_info if word.lower()
-        #                                      in job_types])
-
-        # # posting_data['description'] = worker_driver.find_element(
-        # # By.XPATH, '/html/body/div[1]/div[2]/div[3]/div/div/div[1]/div[3]/div/div[2]/div[10]').text.split('\n')
 
         print(posting_data)
-
-        with open('jobs.txt', 'w') as f:
-            f.write('\n'.join(' : '.join((item[0], str(item[1])))
-                              for item in posting_data.items()))
