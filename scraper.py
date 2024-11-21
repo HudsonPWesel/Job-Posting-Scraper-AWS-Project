@@ -26,68 +26,85 @@ if __name__ == "__main__":
     options = webdriver.ChromeOptions()
     options.headless = False
     options.add_argument("start-maximized")
-    driver = uc.Chrome(use_subprocess=False, options=options)
-    driver.get(
-        "https://www.indeed.com/jobs?q=Penetration%20Testing%20Intern&l=Boston%2C%20MA&from=searchOnDesktopSerp")
-
-    page_source = driver.page_source
-
-    job_links = driver.find_elements(
-        By.CSS_SELECTOR, '.jcs-JobTitle')  # Get all LI job postings links
-
+    main_driver = uc.Chrome(use_subprocess=False, options=options)
     data = []
     job_types = ['seasonal', 'full-time', 'part-time',
                  'internship', 'intern', 'temp', 'temporary']
-    for link in job_links:
-        posting_data = {}
-        worker_driver = uc.Chrome(use_subprocess=False)
-        worker_driver.get(link.get_attribute('href'))
 
-        soup = BeautifulSoup(worker_driver.page_source, 'html5lib')
+    main_driver.get(
+        "https://www.indeed.com/jobs?q=Penetration%20Testing%20Intern&l=Boston%2C%20MA&from=searchOnDesktopSerp")
 
-        job_title_data = soup.select_one('h1') or soup.select_one(
-            'span[data-testid="jobsearch-JobInfoHeader-title"]') or soup.find_all('h1')
+    main_soup = BeautifulSoup(main_driver.page_source, 'html5lib')
 
-        posting_data['job-title'] = job_title_data.text if job_title_data else 'Unspecified'
+    link_to_next = main_soup.select_one(
+        'a[aria-label="Next Page"]').get_attribute_list('href')
 
-        location_data = soup.select_one(
-            'div[data-testid="inlineHeader-companyLocation"]') or soup.select_one('.css-1ojh0u')
+    while link_to_next:
+        main_soup = BeautifulSoup(main_driver.page_source, 'html5lib')
+        job_links = main_driver.find_elements(By.CSS_SELECTOR, '.jcs-JobTitle')
 
-        posting_data['location'] = location_data.text if location_data else 'Unspecified'
+        for i, link in enumerate(job_links):
+            posting_data = {}
+            worker_driver = uc.Chrome(use_subprocess=False)
+            worker_driver.get(link.get_attribute('href'))
+            worker_soup = BeautifulSoup(worker_driver.page_source, 'html5lib')
 
-        salary_low = salary_high = job_type = 'Unspecified'
+            if i == len(job_links) - 1:
+                try:
+                    link_to_next = main_soup.select_one(
+                        'a[aria-label="Next Page"]').get_attribute_list('href')
+                except:
+                    print('Job-scraping complete!')
 
-        # Salary is really weird so I wrap in try/except
-        salary_data = soup.select_one(
-            'span.css-19j1a75') or soup.select_one('.salaryInfoAndJobType') or soup.select_one('.css-1xkrvql')
+            job_title_data = worker_soup.select_one('h1') or worker_soup.select_one(
+                'span[data-testid="jobsearch-JobInfoHeader-title"]') or worker_soup.find_all('h1')
 
-        salary_data = salary_data.text.split(
-            ' ') if salary_data else 'Unspecified'
+            posting_data['job-title'] = job_title_data.text if job_title_data else 'Unspecified'
 
-        salary_range = [float(salary_item[1:].replace(',', ''))
-                        for salary_item in salary_data if '$' in salary_item]
+            location_data = worker_soup.select_one(
+                'div[data-testid="inlineHeader-companyLocation"]') or worker_soup.select_one('.css-1ojh0u')
 
-        if len(salary_range) == 1:
-            posting_data['salary_high'] = posting_data['salary_low'] = salary_range[0]
+            posting_data['location'] = location_data.text if location_data else 'Unspecified'
 
-        elif len(salary_range) == 2:
-            posting_data['salary_low'], posting_data['salary_high'] = salary_range[0], salary_range[1]
-        else:
-            posting_data['salary_low'] = posting_data['salary_high'] = 0.00
+            salary_low = salary_high = job_type = 'Unspecified'
 
-        job_type_data = soup.select_one(
-            '.css-k5flys') or soup.select_one('div[id="salaryInfoAndJobType"]')
+            # Salary is really weird so I wrap in try/except
+            salary_data = worker_soup.select_one(
+                'span.css-19j1a75') or worker_soup.select_one('.salaryInfoAndJobType') or worker_soup.select_one('.css-1xkrvql')
 
-        if job_type_data:
-            job_type_data = job_type_data.text.split(' ')
-            posting_data['job-type'] = [job_type_item.replace(',', '') for job_type_item in job_type_data if len(
-                job_type_item) > 1 and (job_type_item.replace(',', '').lower() in job_types)]
-        else:
-            posting_data['job-type'] = ['Unspecified']
+            salary_data = salary_data.text.split(
+                ' ') if salary_data else 'Unspecified'
 
-        posting_data['posting-link'] = link.get_attribute("href")
+            salary_range = [float(salary_item[1:].replace(',', ''))
+                            for salary_item in salary_data if '$' in salary_item]
 
-        with open('listings.txt', 'a') as f:
-            f.write(posting_data)
+            if len(salary_range) == 1:
+                posting_data['salary_high'] = posting_data['salary_low'] = salary_range[0]
 
-        worker_driver.quit()
+            elif len(salary_range) == 2:
+                posting_data['salary_low'], posting_data['salary_high'] = salary_range[0], salary_range[1]
+            else:
+                posting_data['salary_low'] = posting_data['salary_high'] = 0.00
+
+            job_type_data = worker_soup.select_one(
+                '.css-k5flys') or worker_soup.select_one('div[id="salaryInfoAndJobType"]')
+
+            if job_type_data:
+                job_type_data = job_type_data.text.split(' ')
+                posting_data['job-type'] = [job_type_item.replace(',', '') for job_type_item in job_type_data if len(
+                    job_type_item) > 1 and (job_type_item.replace(',', '').lower() in job_types)]
+            else:
+                posting_data['job-type'] = ['Unspecified']
+
+            posting_data['posting-link'] = link.get_attribute("href")
+
+            with open('listings.txt', 'a') as f:
+                f.write('\n'.join(' : '.join((item[0], str(item[1])))
+                                  for item in posting_data.items()))
+                f.write('\n')
+                f.write('\n')
+
+            worker_driver.quit()
+
+        print(link_to_next)
+        main_driver.get(f"https://www.indeed.com/{link_to_next[0]}")
