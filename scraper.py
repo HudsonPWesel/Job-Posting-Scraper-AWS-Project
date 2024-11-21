@@ -58,37 +58,32 @@ if __name__ == "__main__":
         salary_low = salary_high = job_type = 'Unspecified'
 
         # Salary is really weird so I wrap in try/except
-        try:
-            salary_data = soup.select_one(
-                'span.css-19j1a75') or soup.select_one('.salaryInfoAndJobType') or soup.select_one('.css-1xkrvql')
+        salary_data = soup.select_one(
+            'span.css-19j1a75') or soup.select_one('.salaryInfoAndJobType') or soup.select_one('.css-1xkrvql')
 
-            salary_data = salary_data.text.split(
-                ' ') if salary_data else 'Unspecified'
+        salary_data = salary_data.text.split(
+            ' ') if salary_data else 'Unspecified'
 
-            salary_range = [float(salary_item[1:].replace(',', ''))
-                            for salary_item in salary_data if '$' in salary_item]
+        salary_range = [float(salary_item[1:].replace(',', ''))
+                        for salary_item in salary_data if '$' in salary_item]
 
-            if len(salary_range) == 1:
-                posting_data['salary_high'] = posting_data['salary_low'] = salary_range[0]
+        if len(salary_range) == 1:
+            posting_data['salary_high'] = posting_data['salary_low'] = salary_range[0]
 
-            elif len(salary_range) == 2:
-                posting_data['salary_low'], posting_data['salary_high'] = salary_range[0], salary_range[1]
-        except:
-            print(salary_data)
+        elif len(salary_range) == 2:
+            posting_data['salary_low'], posting_data['salary_high'] = salary_range[0], salary_range[1]
+        else:
             posting_data['salary_low'] = posting_data['salary_high'] = 0.00
 
-        try:
-            job_type_data = soup.select_one(
-                '.css-k5flys') or soup.select_one('div[id="salaryInfoAndJobType"]')
+        job_type_data = soup.select_one(
+            '.css-k5flys') or soup.select_one('div[id="salaryInfoAndJobType"]')
 
+        if job_type_data:
             job_type_data = job_type_data.text.split(' ')
-
-            print(job_type_data)
             posting_data['job-type'] = [job_type_item.replace(',', '') for job_type_item in job_type_data if len(
                 job_type_item) > 1 and (job_type_item.replace(',', '').lower() in job_types)]
-
-        except:
-            posting_data['job-type'] = 'Unspecified'
+        else:
+            posting_data['job-type'] = ['Unspecified']
 
         posting_data['posting-link'] = link.get_attribute("href")
 
