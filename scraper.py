@@ -87,4 +87,7 @@ if __name__ == "__main__":
 
         posting_data['posting-link'] = link.get_attribute("href")
 
-        print(posting_data)
+        with open('listings.txt', 'a') as f:
+            f.write(posting_data)
+
+        worker_driver.quit()
