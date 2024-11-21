@@ -1,7 +1,3 @@
-title : Software Engineer Intern
-company-name : UNIYOND EDUCATION TECHNOLOGY INC
-location : 1 Lincoln Street, Boston, MA 02111
-salary-low : 15.0
-salary-high : 39.12
-job_type : Internship
-posting-link : https://www.indeed.com/rc/clk?jk=ff5af4e8582480fb&bb=szsJyIX7VffmNDWa-PbYtBUJplz7B53_ept4afdYSd_asMC00EES4ObJVBmjf4zlHVwRtc6QExolZSjKew_sdyvJ8Bp6acbjZ4r1XpZ3FvirqFOvDmWBHB1YnXruIWSG&xkcb=SoAz67M35jtvTbSCNR0LbzkdCdPP&fccid=b62ab0e9b9f373c3&cmp=UNIYOND-EDUCATION-TECHNOLOGY-INC&ti=Software+Engineer+Intern&vjs=3
+job-title : Artificial Intelligence and Machine Learning Intern
+location : 202 Burlington Road, Bedford, MA 01730
+posting-link : https://www.indeed.com/rc/clk?jk=a17d0edbfab01c34&bb=W1U9stYkfa1rVLM415kVqusGfXlx5IJLIHCMD9PV73_xcxKKQmxKQMnWkxN_6zbrlX5T_DvRsPbq4QpJyju0LaOXb5_GL1dngWjMyAvlCW49qXqmKK1tJA%3D%3D&xkcb=SoBP67M35nvdW8y8SB0FbzkdCdPP&fccid=30bd8a58380c700b&vjs=3

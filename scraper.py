@@ -41,43 +41,49 @@ if __name__ == "__main__":
         posting_data = {}
         worker_driver = uc.Chrome(use_subprocess=False)
         worker_driver.get(link.get_attribute("href"))
+        soup = BeautifulSoup(worker_driver.page_source, 'html5lib')
+
+        posting_data['job-title'] = soup.select_one(
+            '.jobsearch-JobInfoHeader-title-container').text.split(' - ')[0]
+
+        posting_data['location'] = soup.select_one(
+            'div[data-testid="inlineHeader-companyLocation"]').text
+
+        salary_low = salary_high = job_type = 'Unspecified'
+        try:
+            salary_range = soup.select_one('.css-19j1a75').text.split(' - ')
+
+            def parse_salary(salary_range): return [float(
+                salary_item[1:]) for salary_item in salary_range]
+
+            salary_range = parse_salary(salary_range)
+
+            if len(salary_range) == 1:
+                posting_data['salary_high'] = salary_range[0]
+
+            elif len(salary_range) == 2:
+                posting_data['salary_low'], posting_data['salary_high'] = salary_range[0], salary_range[1]
+        except:
+            print('Failed to extract salary!')
+            print(link)
 
         try:
-            posting_data['title'] = worker_driver.find_element(
-                By.XPATH, '//*[@id="viewJobSSRRoot"]/div[2]/div[3]/div/div/div[1]/div[2]/div[1]/div[1]/h1/span').text
-        except Exception as e:
-            posting_data['title'] = worker_driver.find_element(
-                By.CLASS_NAME, 'jobsearch-JobInfoHeader-title ').text
-            print(e)
-            print(link.get_attribute("href"))
+            posting_data['job-type'] = soup.select_one(
+                '.css-k5flys').text.split(' ')
 
-        posting_data['company-name'] = worker_driver.find_element(
-            By.CLASS_NAME, 'css-1ioi40n').text
+        except:
+            print('Failed to extract job-type')
+            print(link)
 
-        posting_data['location'] = worker_driver.find_element(
-            By.XPATH, '/html/body/div[1]/div[2]/div[3]/div/div/div[1]/div[2]/div[1]/div[2]/div/div/div/div[2]/div').text
-
-        salary_jobtype_text = worker_driver.find_element(
-            By.XPATH, '/html/body/div[1]/div[2]/div[3]/div/div/div[1]/div[2]/div[2]/div/div').text.split(' ')
-
-        salary = ([float(word[1:])
-                   for word in salary_jobtype_text if '$' in word]) or 'Unspecified'
-
-        if salary != 'Unspecified' and len(salary) > 1:
-            posting_data['salary-low'] = min(salary[0], salary[1])
-            posting_data['salary-high'] = max(salary[0], salary[1])
-        elif len(salary) == 1:
-            posting_data['salary-high'] = salary[0]
-        else:
-            posting_data['salary-low'] = ''
-            posting_data['salary-high'] = ''
-        posting_data['job_type'] = ','.join([word for word in salary_jobtype_text if word.lower()
-                                             in job_types])
-
-        # posting_data['description'] = worker_driver.find_element(
-        # By.XPATH, '/html/body/div[1]/div[2]/div[3]/div/div/div[1]/div[3]/div/div[2]/div[10]').text.split('\n')
         posting_data['posting-link'] = link.get_attribute("href")
+        # posting_data['job_type'] = ','.join([word for word in salary_jobtype_info if word.lower()
+        #                                      in job_types])
 
-        with open('jobs.txt', 'a') as f:
+        # # posting_data['description'] = worker_driver.find_element(
+        # # By.XPATH, '/html/body/div[1]/div[2]/div[3]/div/div/div[1]/div[3]/div/div[2]/div[10]').text.split('\n')
+
+        print(posting_data)
+
+        with open('jobs.txt', 'w') as f:
             f.write('\n'.join(' : '.join((item[0], str(item[1])))
                               for item in posting_data.items()))
